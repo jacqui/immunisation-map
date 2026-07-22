@@ -5,18 +5,36 @@ import { feature } from "topojson-client";
 const geography = await d3.json("/data/sa3.topo.json");
 const vaccinations = await d3.csv("/data/vaccination.csv");
 
-const currentAge = "2 Year olds";
+let currentAge = "2 Year olds";
+
+// lookup data by age group
+function buildLookup(ageGroup) {
+  return new Map(
+    vaccinations
+      .filter((d) => d["Age Group"] === ageGroup)
+      .map((d) => [d.SA3_Code, +d["% Fully"]]),
+  );
+}
 
 // 2. Convert topojson -> geojson
 
 const regions = feature(geography, geography.objects["sa3.raw"]);
 
 // 3. Create a map of SA3 codes to vaccination rates
-const vaccinationMap = new Map(
-  vaccinations
-    .filter((d) => d["Age Group"] === currentAge)
-    .map((d) => [d.SA3_Code, +d["% Fully"]]),
-);
+let vaccinationMap = buildLookup("2 Year olds");
+
+function updateMap(ageGroup) {
+  vaccinationMap = buildLookup(ageGroup);
+
+  g.selectAll("path")
+    .transition()
+    .duration(400)
+    .attr("fill", (d) => {
+      const value = vaccinationMap.get(d.properties.SA3_CODE_2021);
+
+      return value ? colour(value) : "#ddd";
+    });
+}
 
 // 4. Colour scale for the map
 const colour = d3
@@ -95,12 +113,17 @@ g.selectAll("path")
       .style("left", `${event.pageX + 15}px`)
       .style("top", `${event.pageY + 15}px`);
   })
-  .on("mouseout", function () {
-    d3.select(this).attr("stroke", "#fff").attr("stroke-width", 0.5);
-    tooltip.style("opacity", 0);
-  })
+  // .on("mouseout", function () {
+  //   d3.select(this).attr("stroke", "#fff").attr("stroke-width", 0.5);
+  //   tooltip.style("opacity", 0);
+  // })
   .on("mouseleave", () => {
     g.selectAll("path").attr("stroke", "#fff").attr("stroke-width", 0.5);
 
     tooltip.style("opacity", 0);
   });
+
+d3.select("#age").on("change", function () {
+  currentAge = this.value;
+  updateMap(currentAge);
+});
