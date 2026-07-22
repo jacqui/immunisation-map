@@ -10,10 +10,6 @@ svg {
   height: auto;
 }
 
-#map svg {
-  border: 1px solid black;
-}
-
 .region {
   stroke: white;
   stroke-width: 0.5;

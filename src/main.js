@@ -34,6 +34,16 @@ const svg = d3
   .append("svg")
   .attr("viewBox", `0 0 ${width} ${height}`);
 
+const g = svg.append("g");
+const zoom = d3
+  .zoom()
+  .scaleExtent([1, 15])
+  .on("zoom", (event) => {
+    g.attr("transform", event.transform);
+  });
+
+svg.call(zoom);
+
 const tooltip = d3
   .select("body")
   .append("div")
@@ -51,16 +61,27 @@ const tooltip = d3
 const projection = d3.geoMercator().fitSize([width, height], regions);
 const path = d3.geoPath(projection);
 
-svg
-  .selectAll("path")
+g.selectAll("path")
   .data(regions.features)
   .join("path")
+  .attr("stroke", "#fff")
+  .attr("stroke-width", 0.5)
   .attr("d", path)
   .attr("fill", (d) => {
     const value = vaccinationMap.get(d.properties.SA3_CODE_2021);
     return value ? colour(value) : "#ccc";
   })
+  .attr("vector-effect", "non-scaling-stroke")
+
   .on("mouseover", function (event, d) {
+    // outline selected region with a black border
+
+    d3.select(this)
+      .raise()
+      .attr("stroke", "#222")
+      .attr("stroke-width", 1)
+      .attr("stroke-linejoin", "round");
+
     const value = vaccinationMap.get(d.properties.SA3_CODE_2021);
 
     tooltip.style("opacity", 1).html(`
@@ -75,5 +96,11 @@ svg
       .style("top", `${event.pageY + 15}px`);
   })
   .on("mouseout", function () {
+    d3.select(this).attr("stroke", "#fff").attr("stroke-width", 0.5);
+    tooltip.style("opacity", 0);
+  })
+  .on("mouseleave", () => {
+    g.selectAll("path").attr("stroke", "#fff").attr("stroke-width", 0.5);
+
     tooltip.style("opacity", 0);
   });
