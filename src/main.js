@@ -12,7 +12,11 @@ function buildLookup(ageGroup) {
   return new Map(
     vaccinations
       .filter((d) => d["Age Group"] === ageGroup)
-      .map((d) => [d.SA3_Code, +d["% Fully"]]),
+      .map((d) => {
+        const raw = d["% Fully"];
+        const value = raw === "" ? null : +raw;
+        return [d.SA3_Code, value];
+      }),
   );
 }
 
@@ -31,8 +35,7 @@ function updateMap(ageGroup) {
     .duration(400)
     .attr("fill", (d) => {
       const value = vaccinationMap.get(d.properties.SA3_CODE_2021);
-
-      return value ? colour(value) : "#ddd";
+      return Number.isFinite(value) ? colour(value) : "#e5e5e5";
     });
 }
 
@@ -87,7 +90,7 @@ g.selectAll("path")
   .attr("d", path)
   .attr("fill", (d) => {
     const value = vaccinationMap.get(d.properties.SA3_CODE_2021);
-    return value ? colour(value) : "#ccc";
+    return Number.isFinite(value) ? colour(value) : "#e5e5e5";
   })
   .attr("vector-effect", "non-scaling-stroke")
 
@@ -101,22 +104,19 @@ g.selectAll("path")
       .attr("stroke-linejoin", "round");
 
     const value = vaccinationMap.get(d.properties.SA3_CODE_2021);
-
-    tooltip.style("opacity", 1).html(`
-      <strong>${d.properties.SA3_NAME_2021}</strong><br>
-      ${currentAge}<br>
-      <strong>${value.toFixed(1)}%</strong> fully vaccinated
-    `);
+    tooltip
+      .style("opacity", 1)
+      .html(
+        Number.isFinite(value)
+          ? `<strong>${d.properties.SA3_NAME_2021}</strong><br>${currentAge}<br><strong>${value.toFixed(1)}%</strong> fully vaccinated`
+          : `<strong>${d.properties.SA3_NAME_2021}</strong><br>${currentAge}<br>Data not available`,
+      );
   })
   .on("mousemove", function (event) {
     tooltip
       .style("left", `${event.pageX + 15}px`)
       .style("top", `${event.pageY + 15}px`);
   })
-  // .on("mouseout", function () {
-  //   d3.select(this).attr("stroke", "#fff").attr("stroke-width", 0.5);
-  //   tooltip.style("opacity", 0);
-  // })
   .on("mouseleave", () => {
     g.selectAll("path").attr("stroke", "#fff").attr("stroke-width", 0.5);
 
