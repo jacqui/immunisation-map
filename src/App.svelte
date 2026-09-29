@@ -41,6 +41,13 @@
 
   let transform = $state(d3.zoomIdentity);
 
+  function resetZoom() {
+    d3.select(svgEl)
+        .transition()
+        .duration(400)
+        .call(zoom.transform, d3.zoomIdentity);
+    }
+
   const zoom = d3
     .zoom()
     .scaleExtent([1, 12])
@@ -73,8 +80,27 @@
   <select id="age" bind:value={currentAge}>
     {#each AGE_GROUPS as age}<option value={age}>{age}</option>{/each}
   </select>
+
+<button onclick={resetZoom} disabled={transform.k === 1 && transform.x === 0 && transform.y === 0}>
+    Reset zoom
+  </button>
+
 </div>
 
+<div class="legend">
+<div
+  class="legend-bar"
+  style="--c0:{colour(80)}; --c1:{colour(85)}; --c2:{colour(90)}; --c3:{colour(95)}; --c4:{colour(100)};"
+></div>  <div class="legend-labels">
+    <span>80%</span>
+    <span>90%</span>
+    <span>95% target</span>
+    <span>100%</span>
+  </div>
+  <div class="legend-note">
+    <span class="swatch swatch--nodata"></span> No data available
+  </div>
+</div>
 <div class="map-wrap">
   {#if regions}
     <svg 
