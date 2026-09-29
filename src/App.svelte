@@ -9,6 +9,8 @@
   let vaccinations = $state([]);
   let hovered = $state(null); // { name, value, x, y } | null
 
+  let svgEl = $state(null);
+
   onMount(async () => {
     const [geography, csv] = await Promise.all([
       d3.json("/data/sa3.topo.json"),
@@ -36,6 +38,22 @@
     regions ? d3.geoMercator().fitSize([width, height], { type: "FeatureCollection", features: regions }) : null
   );
   let path = $derived(projection ? d3.geoPath(projection) : null);
+
+  let transform = $state(d3.zoomIdentity);
+
+  const zoom = d3
+    .zoom()
+    .scaleExtent([1, 12])
+    .on("zoom", (event) => {
+      transform = event.transform;
+    });
+
+  $effect(() => {
+    if (svgEl) {
+      d3.select(svgEl).call(zoom);
+    }
+  });
+
 </script>
 
 <header>
@@ -59,26 +77,26 @@
 
 <div class="map-wrap">
   {#if regions}
-<svg viewBox="0 0 {width} {height}" preserveAspectRatio="xMinYMid meet">
-          {#each regions as d}
-        {@const value = lookup(d.properties.SA3_CODE_2021)}
-        <path
-          d={path(d)}
-          fill={value !== null ? colour(value) : "#e5e5e5"}
-          stroke="#fff"
-          stroke-width="0.5"
-          vector-effect="non-scaling-stroke"
-          onmouseenter={(e) =>
-            (hovered = {
-              name: d.properties.SA3_NAME_2021,
-              value,
-              x: e.clientX,
-              y: e.clientY,
-            })}
-          onmousemove={(e) => hovered && (hovered = { ...hovered, x: e.clientX, y: e.clientY })}
-          onmouseleave={() => (hovered = null)}
-        />
-      {/each}
+    <svg 
+      bind:this={svgEl}
+      viewBox="0 0 {width} {height}" 
+      preserveAspectRatio="xMinYMid meet">
+        <g transform={transform}>
+         {#each regions as d}
+      {@const value = lookup(d.properties.SA3_CODE_2021)}
+      <path
+        d={path(d)}
+        fill={value !== null ? colour(value) : "#e5e5e5"}
+        stroke="#fff"
+        stroke-width="0.5"
+        vector-effect="non-scaling-stroke"
+        onmouseenter={(e) => (hovered = { name: d.properties.SA3_NAME_2021, value, x: e.clientX, y: e.clientY })}
+        onmousemove={(e) => hovered && (hovered = { ...hovered, x: e.clientX, y: e.clientY })}
+        onmouseleave={() => (hovered = null)}
+      />
+    {/each}
+  </g>
+
     </svg>
   {:else}
     <p>Loading map…</p>
