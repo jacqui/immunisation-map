@@ -1,6 +1,6 @@
 # childhood immunisation map
 
-A choropleth map of childhood immunisation rates across Australia, built to keep my data analysis and visualisation skills sharp while studying public health. Data clean-up with pandas, data vis with d3.
+A choropleth map of childhood immunisation rates across Australia, built to keep my data analysis and visualisation skills sharp while studying public health. Data clean-up with pandas, data vis with d3 and now Svelte - my first Svelte project.
 
 ## Run
 
